@@ -1,0 +1,8 @@
+{
+    "config": "tmp/sys/config",
+    "initrd": { "type": "cpio", "gzip": true, "directory": "tmp" },
+    "iso9660": true,
+    "partitions": [
+        { "type": "boot", "size": 16 },
+    ]
+}
