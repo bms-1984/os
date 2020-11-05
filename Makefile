@@ -59,14 +59,15 @@ $(IMGFILE): $(KERNELFILE)
 	@cd $(TMPDIR)
 	@cp config.in $(TMPDIR)/sys/config
 	@mkbootimg mkbootimg.json $@
-	@echo Done.
+	@echo All done!
 
 clean:
 	-@$(RM) -rf $(wildcard $(CLEANFILES))
 	@echo All clean!
 
 dist:
-	@tar cJvf $(DISTFILE) $(ALLFILES)
+	@tar cJf $(DISTFILE) $(ALLFILES)
+	@echo All packed!
 
 debug: $(IMGFILE) Makefile $(OVMF)
 	@qemu-system-$(ARCH) -bios $(OVMF) -s -S -m 1024 -drive file=$<,format=raw
