@@ -4,5 +4,6 @@
 *.o
 *.elf
 tmp
-.tar.gz
+*.tar.gz
 *~
+*_t

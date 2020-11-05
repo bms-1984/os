@@ -6,41 +6,47 @@ WARNINGS     	:= -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
                    -Wconversion -Wstrict-prototypes
 
 VERSION		:= 0.1.0
-IMGFILE   	:= os-$(VERSION).img
 
 ARCH		?= x86_64
 KERNELFILE	:= os.$(ARCH).elf
 ARCHDIR		:= kernel/arch/$(ARCH)
 
-LDFLAGS         := -T $(ARCHDIR)/linker.ld -nostdlib
+IMGFILE   	:= os.$(ARCH)-$(VERSION).img
+DISTFILE	:= os-$(VERSION).tar.gz
+TXTFILE		:= $(KERNELFILE:.elf=.txt)
+
+LDFLAGS         := -T $(ARCHDIR)/linker.ld -nostdlib -nostartfiles
 CFLAGS       	:= $(WARNINGS) -fpic -ffreestanding -nostdlib -Ikernel/include -g -mno-red-zone 
 
-OVMF            ?= /usr/share/ovmf/OVMF.fd
+OVMF            ?= /usr/share/ovmf/x64/OVMF.fd
 CC		:= $(ARCH)-elf-gcc
 LD		:= $(ARCH)-elf-ld
 STRIP		:= $(ARCH)-elf-strip
 READELF		:= $(ARCH)-elf-readelf
 
-AUXFILES	:= Makefile bios.bin
+AUXFILES	:= Makefile config.in mkbootimg.json
 PROJDIRS	:= kernel
-SRCFILES	:= $(shell find $(PROJDIRS) -type f -name "\*.c")
-HDRFILES	:= $(shell find $(PROJDIRS) -type f -name "\*.h")
-OBJFILES	:= $(SRCFILES:.c=.o)
+FONTFILES	:= $(shell find $(PROJDIRS) -type f -name "*.psf")
+SRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.c")
+HDRFILES	:= $(shell find $(PROJDIRS) -type f -name "*.h")
+OBJFILES	:= $(SRCFILES:.c=.o) $(FONTFILES:.psf=.o)
 TESTFILES	:= $(SRCFILES:.c=_t)
 DEPFILES	:= $(SRCFILES:.c=.d)
 TESTDEPFILES	:= $(TESTFILES:%=%.d)
-ALLFILES     	:= $(SRCFILES) $(HDRFILES) $(AUXFILES) kernel/font.psf
+ALLFILES     	:= $(SRCFILES) $(HDRFILES) $(AUXFILES) $(FONTFILES)
+TMPDIR		:= tmp
+CLEANFILES	:= $(OBJFILES) $(DEPFILES) $(TESTDEPFILES) $(KERNELFILE) $(IMGFILE) $(DISTFILE) $(TXTFILE) $(TMPDIR)
 
 .PHONY: all clean dist run debug run_noefi debug_noefi
 
 all: $(IMGFILE) Makefile
 
-$(KERNELFILE): $(OBJFILES) kernel/font.o
+$(KERNELFILE): $(OBJFILES)
 	@$(LD) $(LDFLAGS) $^ -o $@
 	@$(STRIP) -s -K mmio -K fb -K bootboot -K environment $@
 	@$(READELF) -hls $@ > $(KERNELFILE:.elf=.txt)
 
-kernel/font.o: kernel/font.psf
+kernel/font.o: $(FONTFILES)
 	@$(LD) -r -b binary -o $@ $^
 
 .o.c:
@@ -48,19 +54,19 @@ kernel/font.o: kernel/font.psf
 
 $(IMGFILE): $(KERNELFILE)
 	@mkbootimg check $^
-	@mkdir -p tmp/sys
-	@cp $^ tmp/sys/core
-	@cd tmp
-	@cp config.in tmp/sys/config
+	@mkdir -p $(TMPDIR)/sys
+	@cp $^ $(TMPDIR)/sys/core
+	@cd $(TMPDIR)
+	@cp config.in $(TMPDIR)/sys/config
 	@mkbootimg mkbootimg.json $@
 	@echo Done.
 
 clean:
-	-@$(RM) -rf $(wildcard $(OBJFILES) $(DEPFILES) $(TESTDEPFILES) $(KERNELFILE) $(IMGFILE) os-$(VERSION).tar.gz $(KERNELFILE:.elf=.txt) tmp kernel/font.o)
+	-@$(RM) -rf $(wildcard $(CLEANFILES))
 	@echo All clean!
 
 dist:
-	@tar cJvf os-$(VERSION).tar.gz $(ALLFILES)
+	@tar cJvf $(DISTFILE) $(ALLFILES)
 
 debug: $(IMGFILE) Makefile $(OVMF)
 	@qemu-system-$(ARCH) -bios $(OVMF) -s -S -m 1024 -drive file=$<,format=raw
