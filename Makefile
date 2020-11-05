@@ -12,7 +12,7 @@ KERNELFILE	:= os.$(ARCH).elf
 ARCHDIR		:= kernel/arch/$(ARCH)
 
 IMGFILE   	:= os.$(ARCH)-$(VERSION).img
-DISTFILE	:= os-$(VERSION).tar.gz
+DISTFILE	:= os-$(VERSION).tar.xz
 TXTFILE		:= $(KERNELFILE:.elf=.txt)
 
 LDFLAGS         := -T $(ARCHDIR)/linker.ld -nostdlib -nostartfiles
