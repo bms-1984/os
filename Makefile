@@ -66,7 +66,11 @@ clean:
 	@echo All clean!
 
 dist:
-	@tar cJf $(DISTFILE) $(ALLFILES)
+	@mkdir -p os-$(VERSION)/kernel
+	@cp -R $(wildcard $(AUXFILES)) os-$(VERSION)
+	@cp -R $(wildcard $(SRCFILES) $(FONTFILES) kernel/arch kernel/include) os-$(VERSION)/kernel
+	@tar cJf $(DISTFILE) os-$(VERSION)
+	@$(RM) -rf os-$(VERSION)
 	@echo All packed!
 
 debug: $(IMGFILE) Makefile $(OVMF)
