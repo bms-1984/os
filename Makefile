@@ -1,22 +1,24 @@
--include $(DEPFILES) $(TSTDEPFILES)
-
-WARNINGS     	:= -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
+WARNINGS     	?= -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
 	           -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations   \
                    -Wredundant-decls -Wnested-externs -Winline -Wno-long-long    \
                    -Wconversion -Wstrict-prototypes
 
 VERSION		:= 0.1.0
+NAME		:= os
 
 ARCH		?= x86_64
-KERNELFILE	:= os.$(ARCH).elf
+KERNELFILE	:= $(NAME).$(ARCH).elf
 ARCHDIR		:= kernel/arch/$(ARCH)
 
-IMGFILE   	:= os.$(ARCH)-$(VERSION).img
-DISTFILE	:= os-$(VERSION).tar.xz
+IMGFILE   	:= $(NAME).$(ARCH)-$(VERSION).img
+DISTFILE	:= $(NAME)-$(VERSION).tar.xz
 TXTFILE		:= $(KERNELFILE:.elf=.txt)
 
 LDFLAGS         := -T $(ARCHDIR)/linker.ld -nostdlib -nostartfiles
-CFLAGS       	:= $(WARNINGS) -fpic -ffreestanding -nostdlib -Ikernel/include -g -mno-red-zone 
+LIBS		:= -lgcc
+DEBUG		?= -g
+CFLAGS       	:= $(WARNINGS) -fpic -ffreestanding -nostdlib -Ikernel/include -mno-red-zone $(DEBUG) -mno-sse -mno-sse2 -mno-mmx
+QEMUFLAGS	:= -m 1024 -enable-kvm
 
 OVMF            ?= /usr/share/ovmf/x64/OVMF.fd
 CC		:= $(ARCH)-elf-gcc
@@ -28,14 +30,16 @@ AUXFILES	:= Makefile config.in mkbootimg.json
 PROJDIRS	:= kernel
 FONTFILES	:= $(shell find $(PROJDIRS) -type f -name "*.psf")
 SRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.c")
+ASRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.S")
 HDRFILES	:= $(shell find $(PROJDIRS) -type f -name "*.h")
-OBJFILES	:= $(SRCFILES:.c=.o) $(FONTFILES:.psf=.o)
-TESTFILES	:= $(SRCFILES:.c=_t)
+OBJFILES	:= $(SRCFILES:.c=.o) $(FONTFILES:.psf=.o) $(ASRCFILES:.S=.o)
 DEPFILES	:= $(SRCFILES:.c=.d)
-TESTDEPFILES	:= $(TESTFILES:%=%.d)
-ALLFILES     	:= $(SRCFILES) $(HDRFILES) $(AUXFILES) $(FONTFILES)
+ALLFILES     	:= $(SRCFILES) $(HDRFILES) $(AUXFILES) $(FONTFILES) $(ASRCFILES)
 TMPDIR		:= tmp
-CLEANFILES	:= $(OBJFILES) $(DEPFILES) $(TESTDEPFILES) $(KERNELFILE) $(IMGFILE) $(DISTFILE) $(TXTFILE) $(TMPDIR)
+CLEANFILES	:= $(OBJFILES) $(DEPFILES) $(KERNELFILE) $(IMGFILE) \
+			$(DISTFILE) $(TXTFILE) $(TMPDIR) $(shell find . -type f -name "*~")
+
+-include $(DEPFILES)
 
 .PHONY: all clean dist run debug run_noefi debug_noefi
 
@@ -44,13 +48,16 @@ all: $(IMGFILE) Makefile
 $(KERNELFILE): $(OBJFILES)
 	@$(LD) $(LDFLAGS) $^ -o $@
 	@$(STRIP) -s -K mmio -K fb -K bootboot -K environment $@
-	@$(READELF) -hls $@ > $(KERNELFILE:.elf=.txt)
+	@$(READELF) -hls $@ > $(TXTFILE)
 
 kernel/font.o: $(FONTFILES)
 	@$(LD) -r -b binary -o $@ $^
 
 .o.c:
-	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@
+	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)
+
+.o.S:
+	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)
 
 $(IMGFILE): $(KERNELFILE)
 	@mkbootimg check $^
@@ -59,28 +66,28 @@ $(IMGFILE): $(KERNELFILE)
 	@cd $(TMPDIR)
 	@cp config.in $(TMPDIR)/sys/config
 	@mkbootimg mkbootimg.json $@
-	@echo All done!
+	$(info All done!)
 
 clean:
 	-@$(RM) -rf $(wildcard $(CLEANFILES))
-	@echo All clean!
+	$(info All clean!)
 
 dist:
-	@mkdir -p os-$(VERSION)/kernel
-	@cp -R $(wildcard $(AUXFILES)) os-$(VERSION)
-	@cp -R $(wildcard $(SRCFILES) $(FONTFILES) kernel/arch kernel/include) os-$(VERSION)/kernel
-	@tar cJf $(DISTFILE) os-$(VERSION)
-	@$(RM) -rf os-$(VERSION)
-	@echo All packed!
+	@mkdir -p $(NAME)-$(VERSION)/kernel
+	@cp -R $(wildcard $(AUXFILES)) $(NAME)-$(VERSION)
+	@cp -R $(wildcard $(SRCFILES) $(FONTFILES) kernel/arch kernel/include) $(NAME)-$(VERSION)/kernel
+	@tar cJf $(DISTFILE) $(NAME)-$(VERSION)
+	@$(RM) -rf $(NAME)-$(VERSION)
+	$(info All packed!)
 
 debug: $(IMGFILE) Makefile $(OVMF)
-	@qemu-system-$(ARCH) -bios $(OVMF) -s -S -m 1024 -drive file=$<,format=raw
+	@qemu-system-$(ARCH) -bios $(OVMF) -s -S $(QEMUFLAGS)  -drive file=$<,format=raw
 
 run: $(IMGFILE) Makefile $(OVMF)
-	@qemu-system-$(ARCH) -bios $(OVMF) -m 1024 -drive file=$<,format=raw
+	@qemu-system-$(ARCH) -bios $(OVMF) $(QEMUFLAGS) -drive file=$<,format=raw
 
 debug_noefi: $(IMGFILE) Makefile
-	@qemu-system-$(ARCH) -s -S -m 1024 -drive file=$<,format=raw
+	@qemu-system-$(ARCH) -s -S $(QEMUFLAGS) -drive file=$<,format=raw
 
 run_noefi: $(IMGFILE) Makefile
-	@qemu-system-$(ARCH) -m 1024 -drive file=$<,format=raw
+	@qemu-system-$(ARCH) $(QEMUFLAGS) -drive file=$<,format=raw
