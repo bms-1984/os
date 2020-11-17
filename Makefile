@@ -6,7 +6,7 @@
 WARNINGS     	?= -Wall -pedantic
 
 VERSION		:= 0.1.0
-NAME		:= os
+NAME		:= woodstock
 
 ARCH		?= x86_64
 KERNELFILE	:= $(NAME).$(ARCH).elf
