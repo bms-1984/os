@@ -19,7 +19,7 @@ TXTFILE		:= $(KERNELFILE:.elf=.txt)
 LDFLAGS         := -T $(ARCHDIR)/linker.ld -nostdlib -nostartfiles
 LIBS		:= -lgcc
 DEBUG		?= -g
-CFLAGS       	:= $(WARNINGS) -fpic -ffreestanding -nostdlib -Ikernel/include -mno-red-zone $(DEBUG) -mno-sse -mno-sse2 -mno-mmx
+CFLAGS       	:= -D VERSION=\"$(VERSION)\" $(WARNINGS) -fpic -ffreestanding -nostdlib -Ikernel/include -mno-red-zone $(DEBUG) -mno-sse -mno-sse2 -mno-mmx
 QEMUFLAGS	:= -m 1024 -enable-kvm
 
 OVMF            ?= /usr/share/ovmf/x64/OVMF.fd
