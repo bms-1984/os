@@ -1,7 +1,9 @@
-WARNINGS     	?= -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
-	           -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations   \
-                   -Wredundant-decls -Wnested-externs -Winline -Wno-long-long    \
-                   -Wconversion -Wstrict-prototypes
+# makefile
+# Written by Ben M. Sutter
+# Available since version 0.1.0
+# Last edited 11/17/2020
+
+WARNINGS     	?= -Wall -pedantic
 
 VERSION		:= 0.1.0
 NAME		:= os
@@ -33,7 +35,7 @@ SRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.c")
 ASRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.S")
 HDRFILES	:= $(shell find $(PROJDIRS) -type f -name "*.h")
 OBJFILES	:= $(SRCFILES:.c=.o) $(FONTFILES:.psf=.o) $(ASRCFILES:.S=.o)
-DEPFILES	:= $(SRCFILES:.c=.d)
+DEPFILES	:= $(SRCFILES:.c=.d) $(ASRCFILES:.S=.d)
 ALLFILES     	:= $(SRCFILES) $(HDRFILES) $(AUXFILES) $(FONTFILES) $(ASRCFILES)
 TMPDIR		:= tmp
 CLEANFILES	:= $(OBJFILES) $(DEPFILES) $(KERNELFILE) $(IMGFILE) \
@@ -53,10 +55,10 @@ $(KERNELFILE): $(OBJFILES)
 kernel/font.o: $(FONTFILES)
 	@$(LD) -r -b binary -o $@ $^
 
-.o.c:
+%.o: %.c
 	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)
 
-.o.S:
+%.o: %.S
 	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)
 
 $(IMGFILE): $(KERNELFILE)

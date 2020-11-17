@@ -1,3 +1,10 @@
+/*
+  linker script
+  Written by Ben M. Sutter
+  Available since version 0.1.0
+  Last edited 11/17/2020
+*/
+
 
 mmio  = 0xfffffffff8000000;                    /* these are configurable for level 2 loaders */
 fb    = 0xfffffffffc000000;

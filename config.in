@@ -1,1 +1,8 @@
+/*
+  bootboot environment
+  Written by Ben M. Sutter
+  Available since version 0.1.0
+  Last edited 11/17/2020
+*/
+
 kernel=sys/core

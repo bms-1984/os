@@ -1,3 +1,8 @@
+# gitignore
+# Written by Ben M. Sutter
+# Available since version 0.1.0
+# Last edited 11/17/2020
+
 *.img
 *.txt
 *.d
@@ -6,4 +11,3 @@
 tmp
 *.tar.gz
 *~
-*_t
