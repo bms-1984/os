@@ -5,7 +5,7 @@
 
 WARNINGS     	?= -Wall -pedantic
 
-VERSION		:= 0.1.0
+VERSION		:= 0.2.0
 NAME		:= woodstock
 
 ARCH		?= x86_64
@@ -28,7 +28,7 @@ LD		:= $(ARCH)-elf-ld
 STRIP		:= $(ARCH)-elf-strip
 READELF		:= $(ARCH)-elf-readelf
 
-AUXFILES	:= Makefile config.in mkbootimg.json
+AUXFILES	:= Makefile config.in mkbootimg.json README
 PROJDIRS	:= kernel
 FONTFILES	:= $(shell find $(PROJDIRS) -type f -name "*.psf")
 SRCFILES	:= $(shell find $(PROJDIRS) -type f -name "*.c")
