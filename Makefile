@@ -56,7 +56,7 @@ kernel/font.o: $(FONTFILES)
 	@$(LD) -r -b binary -o $@ $^
 
 %.o: %.c
-	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)
+	@$(CC) $(CFLAGS) -MMD -MP -c $< -o $@ $(LIBS)
 
 %.o: %.S
 	@$(CC) $(CFLAGS) -MMD -MP -c $^ -o $@ $(LIBS)

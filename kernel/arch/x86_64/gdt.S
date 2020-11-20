@@ -11,17 +11,18 @@
 gdt:
 null   = . - gdt
 	.quad   0
+	.global code_0
 code_0 = . - gdt
 	.quad 	(1<<43) | (1<<44) | (1<<47) | (1<<53)
-end:
+gdt_end:
 
 gdt_reference:
-	.word   (end - gdt - 1)
+	.word   (gdt_end - gdt - 1)
 	.quad   gdt
 
 	.text
 	
-	// void load_gdt();
+	// void load_gdt(void);
 	.global load_gdt
 	.func   load_gdt, load_gdt
 load_gdt:
@@ -29,7 +30,7 @@ load_gdt:
 	ret
 	.endfunc
 
-	// void reload_segment_registers();
+	// void reload_segment_registers(void);
 	.global reload_segment_registers
 	.func   reload_segment_registers, reload_segment_registers
 reload_segment_registers:
